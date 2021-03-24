@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+    </script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+        integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick-theme.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.min.js"></script>
+
+    <style>
+      .mini-cart{}
+        
+      .mini-cart .modal-content{border-radius: 0px;}
+      
+      .mini-cart .modal-body{padding: 20px 20px 0px 20px;}
+      .mini-cart .modal-body h2{text-align:center; font-family: 'Roboto Condensed', sans-serif; line-height: 0.7;}
+      .mini-cart .modal-body h2 small{font-size: 14px;}
+      .mini-cart .modal-body table{font-family: 'Roboto Condensed', sans-serif; width: 100%}
+      .mini-cart .modal-body table .total .ex{font-size: 10px;}
+      .mini-cart .modal-body .subtotalFinal{font-family: 'Roboto Condensed', sans-serif; margin-top: 20px;}
+      .mini-cart .modal-body .subtotalFinal label{text-transform: uppercase; font-size: 16px;}
+      .mini-cart .modal-body .subtotalFinal span{font-size: 15px; color: #f00;}
+      .mini-cart .modal-body .payments{/*border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; text-align:center;*/ padding: 5px 0px; }
+      
+      .mini-cart .modal-footer .btn-continue{border-radius: 0px;}
+      
+      .mini-cart .modal-footer .btn-finish{border-radius: 0px; background-color: #FFF; border: 2px solid #000; color: #000;}
+      .mini-cart .modal-footer .btn-finish:hover{background-color: #000; color: #FFF;}
+    </style>
+    <script>
+      //*** MINI CART FUNÇÕES ***//
+        function deleteIt(async, sku, price){
+            //alert("A: "+async);
+            
+            $.ajax({
+            type: 'POST',
+            url: async,
+            dataType: "json",
+            success: function(data){
+              $("#"+sku).hide();
+              getDetailsCart();
+            }
+          });
+        }
+
+
+        function changeCart(cartkey, fixedkey, price){
+            key = fixedkey+$(cartkey).val();
+            
+            $.ajax({
+                type: 'POST',
+                url: site_url.base+'/cart/update_cart',
+                data: key,
+                dataType: "json",
+                success: function(data){
+                    //console.log(data);
+              getDetailsCart();
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                        alert(xhr.status);
+                        alert(thrownError);
+                }
+            });
+        }
+
+        function getDetailsCart(){
+            $.ajax({
+              type: 'POST',
+              url: site_url.base+'/cart/add_to_cart',
+              dataType: "json",
+                success: function(dados){
+                    //console.log(dados["total"]);
+                    var valorAmericano = dados["total"];
+                    var valorReal = valorAmericano.toString().replace('.', ',');
+                    //console.log(valorReal);
+                    $("#totalatpay span").html("R$ "+valorReal);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                        alert(xhr.status);
+                        alert(thrownError);
+                }
+            });
+        }
+        //***FIM DAS FUNÇÕES MINI CART***//
+    </script>
+</head>
+<body>
+    {# MINICART #}
+    <a data-toggle="modal" href="#miniCart" class="btn btn-primary btn-lg">Launch demo modal</a>
+    
+    <div class="modal fade mini-cart" id="miniCart" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-body">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h2>MINHA SACOLA<br><small>Compras acima de R$ 200,00 tem frete grátis</small></h2>
+          <div class="table-responsive">
+              <table>
+                  <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                  </tr>
+                  
+                  {% for cartkey, product in cart('contents') %}
+                  <tr id="{{product.sku}}" style="border-top: 1px solid #ccc;">
+                      <td>{{ product_img(product, 'thumbnails', {'width': 78}) }}</td>
+                      <td style="padding-left: 10px;">
+                        <b>{{ product.name }}{{ product.sku ? ' (' ~ product.sku ~ ')' : '' }}</b>
+                        
+                        <div class="total">
+                            {% if not product.fixed_quantity %}
+                            	<input name="cartkey[{{ cartkey }}]" id="totalProduct{{ cartkey }}" type="number"  min="1" value="{{ product.quantity }}" style="margin-right: 5px; width: 35px; padding-left: 5px;" {{ product.fixed_quantity ? ' readonly="true"' : '' }} onchange='changeCart("#totalProduct{{ cartkey }}","cartkey%5B{{ cartkey }}%5D=", "{{ cart('subtotal') }}")'> 
+                            {% endif %}
+                            <input type="hidden" id="cartkey" value="cartkey%5B{{ cartkey }}%">
+                            <span class="ex">x</span>
+                            {% if product.base_price > product.price %}
+                                <span id="subtotal" style="font-weight:normal">{{ product.price|format_currency }}</span>
+                            {% else %}
+                                <span id="subtotal" style="font-weight:normal">{{ product.price|format_currency }}</span>
+                            {% endif %}
+                        </div>
+                          
+                        {% for name, value in product.options %}
+                            <div class="options" style="font-weight: normal;"><b></b>{{ name }}</b>: {{ value }}</div>
+                        {% endfor %}
+
+                        {% if product.look_id %}
+                            <div class="options" style="font-weight: normal;">{{ lang('product_of_look', {'look': get_look_name(product.look_id)}) }}</div>
+                        {% endif %}
+                        
+                        
+                        </td>
+                      <td style="padding-right: 10px;">
+                        <button onclick='deleteIt("{{ site_url('cart/remove_item/' ~ cartkey) }}", "{{product.sku}}", "{{ (product.price * product.quantity) }}")' class="btn btn-danger btn-xs" type="button"><span class="glyphicon glyphicon-remove"></span></button>
+                    </td>
+                  </tr>
+                  
+                  {% endfor %}
+                  
+                  <input type="hidden" id="itssubtotal" value="{{ cart('subtotal') }}">
+              </table>
+          </div>
+
+          <div id="totalatpay" class="subtotalFinal"><label>Subtotal:</label> <span>{{ cart('subtotal')|format_currency }}</span></div>
+          
+          <div class="payments">
+            {% if template_settings('if:pay-visa') %} <img src="{{ global_img('f-visa.png') }}">{% endif %}
+            {% if template_settings('if:pay-master') %}<img src="{{ global_img('f-mastercard.png') }}">{% endif %}
+            {% if template_settings('if:pay-diners') %}<img src="{{ global_img('f-diners.png') }}">{% endif %}
+            {% if template_settings('if:pay-elo') %}<img src="{{ global_img('f-elo.png') }}">{% endif %}
+            {% if template_settings('if:pay-amex') %}<img src="{{ global_img('f-amex.png') }}">{% endif %}
+            {% if template_settings('if:pay-aura') %}<img src="{{ global_img('f-aura.png') }}">{% endif %}
+            {% if template_settings('if:pay-discover') %}<img src="{{ global_img('f-discover.png') }}">{% endif %}
+            {% if template_settings('if:pay-jcb') %}<img src="{{ global_img('f-jcb.png') }}">{% endif %}
+            {% if template_settings('if:pay-boleto') %}<img src="{{ global_img('f-boleto.png') }}">{% endif %}
+            {% if template_settings('if:pay-bcash') %}<img src="{{ global_img('f-bcash.png') }}">{% endif %}
+            {% if template_settings('if:pay-cielo') %}<img src="{{ global_img('f-cielo.png') }}">{% endif %}
+            {% if template_settings('if:pay-paypal') %}<img src="{{ global_img('f-paypal.png') }}">{% endif %}
+            {% if template_settings('if:pay-moip') %}<img src="{{ global_img('f-moip.png') }}">{% endif %}
+            {% if template_settings('if:pay-pagseguro') %}<img src="{{ global_img('f-pagseguro.png') }}">{% endif %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a onclick='$("#miniCart").modal("hide");' class="btn btn-primary btn-buy btn-continue">CONTINUAR COMPRANDO</a>
+          <a href="cart/view_cart" class="btn btn-primary btn-buy btn-finish">FINALIZAR PEDIDO</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
